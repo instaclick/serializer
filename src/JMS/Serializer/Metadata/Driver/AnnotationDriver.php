@@ -1,14 +1,14 @@
 <?php
 
 /*
- * Copyright 2011 Johannes M. Schmitt <schmittjoh@gmail.com>
- *
+ * Copyright 2013 Johannes M. Schmitt <schmittjoh@gmail.com>
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,6 +18,7 @@
 
 namespace JMS\Serializer\Metadata\Driver;
 
+use JMS\Serializer\Annotation\Discriminator;
 use JMS\Serializer\GraphNavigator;
 use JMS\Serializer\Annotation\HandlerCallback;
 use JMS\Serializer\Annotation\AccessorOrder;
@@ -51,6 +52,7 @@ use JMS\Serializer\Metadata\VirtualPropertyMetadata;
 use JMS\Serializer\Exception\InvalidArgumentException;
 use JMS\Serializer\Annotation\XmlAttributeMap;
 use Metadata\Driver\DriverInterface;
+use JMS\Serializer\Annotation\MaxDepth;
 
 class AnnotationDriver implements DriverInterface
 {
@@ -83,6 +85,12 @@ class AnnotationDriver implements DriverInterface
                 $classAccessType = $annot->type;
             } elseif ($annot instanceof AccessorOrder) {
                 $classMetadata->setAccessorOrder($annot->order, $annot->custom);
+            } elseif ($annot instanceof Discriminator) {
+                if ($annot->disabled) {
+                    $classMetadata->discriminatorDisabled = true;
+                } else {
+                    $classMetadata->setDiscriminator($annot->field, $annot->map);
+                }
             }
         }
 
@@ -128,7 +136,7 @@ class AnnotationDriver implements DriverInterface
 
                 $isExclude = false;
                 $isExpose = $propertyMetadata instanceof VirtualPropertyMetadata;
-                $AccessType = $classAccessType;
+                $accessType = $classAccessType;
                 $accessor = array(null, null);
 
                 $propertyAnnotations = $propertiesAnnotations[$propertyKey];
@@ -162,7 +170,7 @@ class AnnotationDriver implements DriverInterface
                     } elseif ($annot instanceof XmlValue) {
                         $propertyMetadata->xmlValue = true;
                     } elseif ($annot instanceof AccessType) {
-                        $AccessType = $annot->type;
+                        $accessType = $annot->type;
                     } elseif ($annot instanceof ReadOnly) {
                        $propertyMetadata->readOnly = true;
                     } elseif ($annot instanceof Accessor) {
@@ -182,10 +190,12 @@ class AnnotationDriver implements DriverInterface
                         $propertyMetadata->inline = true;
                     } elseif ($annot instanceof XmlAttributeMap) {
                         $propertyMetadata->xmlAttributeMap = true;
+                    } elseif ($annot instanceof MaxDepth) {
+                        $propertyMetadata->maxDepth = $annot->depth;
                     }
                 }
 
-                $propertyMetadata->setAccessor($AccessType, $accessor[0], $accessor[1]);
+                $propertyMetadata->setAccessor($accessType, $accessor[0], $accessor[1]);
 
                 if ((ExclusionPolicy::NONE === $exclusionPolicy && !$isExclude)
                     || (ExclusionPolicy::ALL === $exclusionPolicy && $isExpose)) {

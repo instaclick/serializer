@@ -1,14 +1,14 @@
 <?php
 
 /*
- * Copyright 2011 Johannes M. Schmitt <schmittjoh@gmail.com>
- *
+ * Copyright 2013 Johannes M. Schmitt <schmittjoh@gmail.com>
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -61,6 +61,22 @@ class XmlDriver extends AbstractFileDriver
 
         if (null !== $xmlRootName = $elem->attributes()->{'xml-root-name'}) {
             $metadata->xmlRootName = (string) $xmlRootName;
+        }
+
+        $discriminatorFieldName = (string) $elem->attributes()->{'discriminator-field-name'};
+        $discriminatorMap = array();
+        foreach ($elem->xpath('./discriminator-class') as $entry) {
+            if ( ! isset($entry->attributes()->value)) {
+                throw new RuntimeException('Each discriminator-class element must have a "value" attribute.');
+            }
+
+            $discriminatorMap[(string) $entry->attributes()->value] = (string) $entry;
+        }
+
+        if ('true' === (string) $elem->attributes()->{'discriminator-disabled'}) {
+            $metadata->discriminatorDisabled = true;
+        } elseif ( ! empty($discriminatorFieldName) || ! empty($discriminatorMap)) {
+            $metadata->setDiscriminator($discriminatorFieldName, $discriminatorMap);
         }
 
         foreach ($elem->xpath('./virtual-property') as $method) {
@@ -169,6 +185,10 @@ class XmlDriver extends AbstractFileDriver
 
                     if (isset($pElem->attributes()->{'xml-key-value-pairs'})) {
                         $pMetadata->xmlKeyValuePairs = 'true' === (string) $pElem->attributes()->{'xml-key-value-pairs'};
+                    }
+
+                    if (isset($pElem->attributes()->{'max-depth'})) {
+                        $pMetadata->maxDepth = (int) $pElem->attributes()->{'max-depth'};
                     }
 
                     //we need read-only before setter and getter set, because that method depends on flag being set

@@ -1,14 +1,14 @@
 <?php
 
 /*
- * Copyright 2011 Johannes M. Schmitt <schmittjoh@gmail.com>
- *
+ * Copyright 2013 Johannes M. Schmitt <schmittjoh@gmail.com>
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,8 @@
 namespace JMS\Serializer\Metadata\Driver;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
+use JMS\Serializer\Metadata\ClassMetadata;
+use JMS\Serializer\Metadata\PropertyMetadata;
 use Metadata\Driver\DriverInterface;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
@@ -73,6 +75,7 @@ class DoctrineTypeDriver implements DriverInterface
 
     public function loadMetadataForClass(\ReflectionClass $class)
     {
+        /** @var $classMetadata ClassMetadata */
         $classMetadata = $this->delegate->loadMetadataForClass($class);
 
         // Abort if the given class is not a mapped entity
@@ -80,9 +83,21 @@ class DoctrineTypeDriver implements DriverInterface
             return $classMetadata;
         }
 
+        if ($doctrineMetadata instanceof ClassMetadataInfo) {
+            if (empty($classMetadata->discriminatorMap) && ! $classMetadata->discriminatorDisabled
+                    && ! empty($doctrineMetadata->discriminatorMap) && $doctrineMetadata->isRootEntity()) {
+                $classMetadata->setDiscriminator(
+                    $doctrineMetadata->discriminatorColumn['name'],
+                    $doctrineMetadata->discriminatorMap
+                );
+            }
+        }
+
         // We base our scan on the internal driver's property list so that we
         // respect any internal white/blacklisting like in the AnnotationDriver
         foreach ($classMetadata->propertyMetadata as $propertyMetadata) {
+            /** @var $propertyMetadata PropertyMetadata */
+
             // If the inner driver provides a type, don't guess anymore.
             if ($propertyMetadata->type) {
                 continue;
@@ -116,6 +131,11 @@ class DoctrineTypeDriver implements DriverInterface
         return $classMetadata;
     }
 
+    /**
+     * @param string $className
+     *
+     * @return ClassMetadataInfo|null
+     */
     private function tryLoadingDoctrineMetadata($className) {
         if (!$manager = $this->registry->getManagerForClass($className)) {
             return null;

@@ -1,14 +1,14 @@
 <?php
 
 /*
- * Copyright 2011 Johannes M. Schmitt <schmittjoh@gmail.com>
- *
+ * Copyright 2013 Johannes M. Schmitt <schmittjoh@gmail.com>
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,6 +18,8 @@
 
 namespace JMS\Serializer\Tests\Serializer;
 
+use JMS\Serializer\Context;
+use JMS\Serializer\SerializationContext;
 use JMS\Serializer\Tests\Fixtures\InvalidUsageOfXmlValue;
 use JMS\Serializer\Exception\InvalidArgumentException;
 use JMS\Serializer\Tests\Fixtures\PersonCollection;
@@ -105,26 +107,34 @@ class XmlSerializationTest extends BaseSerializationTest
 
     public function testVirtualAttributes()
     {
-        $this->serializer->setGroups(array('attributes'));
-        $this->assertEquals($this->getContent('virtual_attributes'), $this->serializer->serialize(new ObjectWithVirtualXmlProperties(),'xml'));
+        $this->assertEquals(
+            $this->getContent('virtual_attributes'),
+            $this->serialize(new ObjectWithVirtualXmlProperties(), SerializationContext::create()->setGroups(array('attributes')))
+        );
     }
 
     public function testVirtualValues()
     {
-        $this->serializer->setGroups(array('values'));
-        $this->assertEquals($this->getContent('virtual_values'), $this->serializer->serialize(new ObjectWithVirtualXmlProperties(),'xml'));
+        $this->assertEquals(
+            $this->getContent('virtual_values'),
+            $this->serialize(new ObjectWithVirtualXmlProperties(), SerializationContext::create()->setGroups(array('values')))
+        );
     }
 
     public function testVirtualXmlList()
     {
-        $this->serializer->setGroups(array('list'));
-        $this->assertEquals($this->getContent('virtual_properties_list'), $this->serializer->serialize(new ObjectWithVirtualXmlProperties(),'xml'));
+        $this->assertEquals(
+            $this->getContent('virtual_properties_list'),
+            $this->serialize(new ObjectWithVirtualXmlProperties(), SerializationContext::create()->setGroups(array('list')))
+        );
     }
 
     public function testVirtualXmlMap()
     {
-        $this->serializer->setGroups(array('map'));
-        $this->assertEquals($this->getContent('virtual_properties_map'), $this->serializer->serialize(new ObjectWithVirtualXmlProperties(),'xml'));
+        $this->assertEquals(
+            $this->getContent('virtual_properties_map'),
+            $this->serialize(new ObjectWithVirtualXmlProperties(), SerializationContext::create()->setGroups(array('map')))
+        );
     }
 
     public function testArrayKeyValues()

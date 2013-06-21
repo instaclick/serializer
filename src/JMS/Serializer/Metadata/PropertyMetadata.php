@@ -1,14 +1,14 @@
 <?php
 
 /*
- * Copyright 2011 Johannes M. Schmitt <schmittjoh@gmail.com>
- *
+ * Copyright 2013 Johannes M. Schmitt <schmittjoh@gmail.com>
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -44,6 +44,7 @@ class PropertyMetadata extends BasePropertyMetadata
     public $inline = false;
     public $readOnly = false;
     public $xmlAttributeMap = false;
+    public $maxDepth = null;
 
     private static $typeParser;
 
@@ -75,6 +76,15 @@ class PropertyMetadata extends BasePropertyMetadata
         $this->setter = $setter;
     }
 
+    public function getValue($obj)
+    {
+        if (null === $this->getter) {
+            return parent::getValue($obj);
+        }
+
+        return $obj->{$this->getter}();
+    }
+
     public function setType($type)
     {
         if (null === self::$typeParser) {
@@ -104,6 +114,7 @@ class PropertyMetadata extends BasePropertyMetadata
             $this->inline,
             $this->readOnly,
             $this->xmlAttributeMap,
+            $this->maxDepth,
             parent::serialize(),
         ));
     }
@@ -128,6 +139,7 @@ class PropertyMetadata extends BasePropertyMetadata
             $this->inline,
             $this->readOnly,
             $this->xmlAttributeMap,
+            $this->maxDepth,
             $parentStr
         ) = unserialize($str);
 

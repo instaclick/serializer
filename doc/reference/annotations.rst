@@ -52,6 +52,12 @@ This annotation can be defined on a property to specifiy to if the property
 should be serialized when only serializing specific groups (see
 :doc:`../cookbook/exclusion_strategies`).
 
+@MaxDepth
+~~~~~~~~~
+This annotation can be defined on a property to limit the depth to which the
+content will be serialized. It is very useful when a property will contain a
+large object graph.
+
 @AccessType
 ~~~~~~~~~~~
 This annotation can be defined on a property, or a class to specify in which way
@@ -141,6 +147,14 @@ default the order is undefined, but you may change it to either "alphabetical", 
         private $name;
     }
 
+@VirtualProperty
+~~~~~~~~~~~~~~~~
+This annotation can be defined on a method to indicate that the data returned by
+the method should appear like a property of the object.
+
+**Note**: This only works for serialization and is completely ignored during
+deserialization.
+
 @Inline
 ~~~~~~~~
 This annotation can be defined on a property to indicate that the data of the property
@@ -189,6 +203,23 @@ by the object iself.
             // custom logic here
         }
     }
+
+@Discriminator
+~~~~~~~~~~~~~~
+
+.. versionadded : 0.12
+    @Discriminator was added
+
+This annotation allows deserialization of relations which are polymorphic, but
+where a common base class exists. The ``@Discriminator`` annotation has to be applied
+to the least super type::
+
+    /**
+     * @Discriminator(field = "type", map = {"car": "Car", "moped": "Moped"})
+     */
+    abstract class Vehicle { }
+    class Car extends Vehicle { }
+    class Moped extends Vehicle { }
 
 @Type
 ~~~~~

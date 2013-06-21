@@ -1,14 +1,14 @@
 <?php
 
 /*
- * Copyright 2011 Johannes M. Schmitt <schmittjoh@gmail.com>
- *
+ * Copyright 2013 Johannes M. Schmitt <schmittjoh@gmail.com>
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -54,6 +54,22 @@ class YamlDriver extends AbstractFileDriver
 
         if (isset($config['xml_root_name'])) {
             $metadata->xmlRootName = (string) $config['xml_root_name'];
+        }
+
+        if (isset($config['discriminator'])) {
+            if (isset($config['discriminator']['disabled']) && true === $config['discriminator']['disabled']) {
+                $metadata->discriminatorDisabled = true;
+            } else {
+                if ( ! isset($config['discriminator']['field_name'])) {
+                    throw new RuntimeException('The "field_name" attribute must be set for discriminators.');
+                }
+
+                if ( ! isset($config['discriminator']['map']) || ! is_array($config['discriminator']['map'])) {
+                    throw new RuntimeException('The "map" attribute must be set, and be an array for discriminators.');
+                }
+
+                $metadata->setDiscriminator($config['discriminator']['field_name'], $config['discriminator']['map']);
+            }
         }
 
         if (array_key_exists('virtual_properties', $config) ) {
@@ -177,6 +193,9 @@ class YamlDriver extends AbstractFileDriver
                         $pMetadata->inline = (Boolean) $pConfig['inline'];
                     }
 
+                    if (isset($pConfig['max_depth'])) {
+                        $pMetadata->maxDepth = (int) $pConfig['max_depth'];
+                    }
                 }
                 if ((ExclusionPolicy::NONE === $exclusionPolicy && !$isExclude)
                 || (ExclusionPolicy::ALL === $exclusionPolicy && $isExpose)) {
@@ -221,7 +240,7 @@ class YamlDriver extends AbstractFileDriver
         if (is_string($config)) {
             $config = array($config);
         } elseif (!is_array($config)) {
-            throw new RuntimeException(sprintf('callback methods expects a string, or an array of strings that represent method names, but got %s.', json_encode($cConfig['pre_serialize'])));
+            throw new RuntimeException(sprintf('callback methods expects a string, or an array of strings that represent method names, but got %s.', json_encode($config['pre_serialize'])));
         }
 
         $methods = array();

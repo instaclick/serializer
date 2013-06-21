@@ -1,14 +1,14 @@
 <?php
 
 /*
- * Copyright 2011 Johannes M. Schmitt <schmittjoh@gmail.com>
- *
+ * Copyright 2013 Johannes M. Schmitt <schmittjoh@gmail.com>
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,13 +18,12 @@
 
 namespace JMS\Serializer\Tests\Serializer;
 
+use JMS\Serializer\Context;
 use JMS\Serializer\Exception\RuntimeException;
-
 use JMS\Serializer\EventDispatcher\Event;
 use JMS\Serializer\EventDispatcher\EventSubscriberInterface;
 use JMS\Serializer\GraphNavigator;
 use JMS\Serializer\VisitorInterface;
-
 use JMS\Serializer\Tests\Fixtures\Author;
 use JMS\Serializer\Tests\Fixtures\AuthorList;
 
@@ -50,8 +49,8 @@ class JsonSerializationTest extends BaseSerializationTest
             $outputs['array_floats'] = '[1.34,3,6.42]';
             $outputs['array_objects'] = '[{"foo":"foo","moo":"bar","camel_case":"boo"},{"foo":"baz","moo":"boo","camel_case":"boo"}]';
             $outputs['array_mixed'] = '["foo",1,true,{"foo":"foo","moo":"bar","camel_case":"boo"},[1,3,true]]';
-            $outputs['blog_post'] = '{"title":"This is a nice title.","created_at":"2011-07-30T00:00:00+0000","is_published":false,"comments":[{"author":{"full_name":"Foo Bar"},"text":"foo"}],"comments2":[{"author":{"full_name":"Foo Bar"},"text":"foo"}],"author":{"full_name":"Foo Bar"}}';
-            $outputs['blog_post_unauthored'] = '{"title":"This is a nice title.","created_at":"2011-07-30T00:00:00+0000","is_published":false,"comments":[],"comments2":[],"author":null}';
+            $outputs['blog_post'] = '{"title":"This is a nice title.","created_at":"2011-07-30T00:00:00+0000","is_published":false,"comments":[{"author":{"full_name":"Foo Bar"},"text":"foo"}],"comments2":[{"author":{"full_name":"Foo Bar"},"text":"foo"}],"metadata":{"foo":"bar"},"author":{"full_name":"Foo Bar"}}';
+            $outputs['blog_post_unauthored'] = '{"title":"This is a nice title.","created_at":"2011-07-30T00:00:00+0000","is_published":false,"comments":[],"comments2":[],"metadata":{"foo":"bar"},"author":null}';
             $outputs['price'] = '{"price":3}';
             $outputs['currency_aware_price'] = '{"currency":"EUR","amount":2.34}';
             $outputs['order'] = '{"cost":{"price":12.34}}';
@@ -73,7 +72,7 @@ class JsonSerializationTest extends BaseSerializationTest
             $outputs['groups_foo'] = '{"foo":"foo","foobar":"foobar"}';
             $outputs['groups_foobar'] = '{"foo":"foo","foobar":"foobar","bar":"bar"}';
             $outputs['groups_default'] = '{"bar":"bar","none":"none"}';
-            $outputs['virtual_properties'] = '{"exist_field":"value","virtual_value":"value","test":"other-name"}';
+            $outputs['virtual_properties'] = '{"exist_field":"value","test":"other-name","virtual_value":"value","typed_virtual_property":1}';
             $outputs['virtual_properties_low'] = '{"low":1}';
             $outputs['virtual_properties_high'] = '{"high":8}';
             $outputs['virtual_properties_all'] = '{"low":1,"high":8}';
@@ -86,6 +85,9 @@ class JsonSerializationTest extends BaseSerializationTest
             $outputs['object_when_null_and_serialized'] = '{"author":null,"text":"foo"}';
             $outputs['date_time'] = '"2011-08-30T00:00:00+0000"';
             $outputs['date_interval'] = '"PT45M"';
+            $outputs['car'] = '{"km":5,"type":"car"}';
+            $outputs['car_without_type'] = '{"km":5}';
+            $outputs['tree'] = '{"tree":{"children":[{"children":[{"children":[],"foo":"bar"}],"foo":"bar"}],"foo":"bar"}}';
         }
 
         if (!isset($outputs[$key])) {
@@ -99,8 +101,8 @@ class JsonSerializationTest extends BaseSerializationTest
     {
         $this->dispatcher->addSubscriber(new LinkAddingSubscriber());
         $this->handlerRegistry->registerHandler(GraphNavigator::DIRECTION_SERIALIZATION, 'JMS\Serializer\Tests\Fixtures\AuthorList', 'json',
-            function(VisitorInterface $visitor, AuthorList $data, array $type) {
-                return $visitor->visitArray(iterator_to_array($data), $type);
+            function(VisitorInterface $visitor, AuthorList $data, array $type, Context $context) {
+                return $visitor->visitArray(iterator_to_array($data), $type, $context);
             }
         );
 
@@ -156,11 +158,19 @@ class JsonSerializationTest extends BaseSerializationTest
     {
         $visitor = $this->serializationVisitors->get('json')->get();
         $functionToCall = 'visit' . ucfirst($primitiveType);
-        $result = $visitor->$functionToCall($data, array());
+        $result = $visitor->$functionToCall($data, array(), $this->getMock('JMS\Serializer\Context'));
         if ($primitiveType == 'double') {
             $primitiveType = 'float';
         }
         $this->assertInternalType($primitiveType, $result);
+    }
+
+    /**
+     * @group empty-object
+     */
+    public function testSerializeEmptyObject()
+    {
+        $this->assertEquals('{}', $this->serialize(new Author(null)));
     }
 
     protected function getFormat()

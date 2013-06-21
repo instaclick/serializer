@@ -73,14 +73,11 @@ expose them via an API that is consumed by a third-party:
     ``@Until``, and ``@Since`` both accept a standardized PHP version number.
 
 If you have annotated your objects like above, you can serializing different
-versions like this:
+versions like this::
 
-.. code-block :: php
+    use JMS\Serializer\SerializationContext;
 
-    <?php
-
-    $serializer->setVersion('1.0');
-    $serializer->serialize(new VersionObject(), 'json');
+    $serializer->serialize(new VersionObject(), 'json', SerializationContext::create()->setVersion(1));
 
 
 Creating Different Views of Your Objects
@@ -92,8 +89,6 @@ whether it is displayed in a list view or in a details view.
 You can achieve that by using the ``@Groups`` annotation on your properties.
 
 .. code-block :: php
-
-    <?php
 
     use JMS\Serializer\Annotation\Groups;
 
@@ -112,11 +107,49 @@ You can achieve that by using the ``@Groups`` annotation on your properties.
         private $comments;
     }
 
-You can then tell the serializer which groups to serialize in your controller:
+You can then tell the serializer which groups to serialize in your controller::
+
+    use JMS\Serializer\SerializationContext;
+
+    $serializer->serialize(new BlogPost(), 'json', SerializationContext::create()->setGroups(array('list')));
+
+Limiting serialization depth of some properties
+-----------------------------------------------
+You can limit the depth of what will be serialized in a property with the
+``@MaxDepth`` annotation.
+This exclusion strategy is a bit different from the others, because it will
+affect the serialized content of others classes than the one you apply the
+annotation to.
 
 .. code-block :: php
 
-    <?php
+    use JMS\Serializer\Annotation\MaxDepth;
 
-    $serializer->setGroups(array('list'));
-    $serializer->serialize(new BlogPost(), 'json');
+    class User
+    {
+        private $username;
+
+        /** @MaxDepth(1) */
+        private $friends;
+
+        /** @MaxDepth(2) */
+        private $posts;
+    }
+
+    class Post
+    {
+        private $title;
+
+        private $author;
+    }
+
+In this example, serializing a user, because the max depth of the ``$friends``
+property is 1, the user friends would be serialized, but not their friends;
+and because the the max depth of the ``$posts`` property is 2, the posts would
+be serialized, and their author would also be serialized.
+
+You need to tell the serializer to take into account MaxDepth checks::
+
+    use JMS\Serializer\SerializationContext;
+
+    $serializer->serialize($data, 'json', SerializationContext::create()->enableMaxDepthChecks());
