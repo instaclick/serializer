@@ -61,6 +61,17 @@ class DoctrineProxySubscriber implements EventSubscriberInterface
         if ( ! $virtualType) {
             $event->setType(get_parent_class($object));
         }
+
+        // Handle the interface class when the object is an instance of either Proxy or ORMProxy.
+        try {
+            $class = new \ReflectionClass($type['name']);
+
+            if ($class->isInterface()) {
+                $event->setType(get_class($object));
+            }
+        } catch (\ReflectionException $e) {
+            // NOP
+        }
     }
 
     public static function getSubscribedEvents()
